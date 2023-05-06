@@ -41,40 +41,82 @@ app.listen(_PORT, () => {
 })
 
 // admin model
+
+//Import AdminModel from the "./models/Admins" file
 const AdminModel = require("./models/Admins")
+
+//Set up a route handler for the HTTP POST request to "/register" endpoint. 
+//Defines an asynchronous callback function with req and res parameters to handle the request and response.
 app.post("/register", async (req, res) => {
 
+    //Use destructuring assignment to extract the username and password properties from the request body (req.body). 
+    //The request body is an object containing these properties.
     const {username, password} = req.body
+    
+    //Use the AdminModel (Mongoose model) to query the database and find a document that matches the provided username. 
+    //It uses the findOne method, which returns a promise.
     const admin = await AdminModel.findOne({username})
     
+    //Check if the admin variable is truthy (a document was found with the given username). 
+    //If it is truthy, it sends a JSON response to the client with a message stating that the user already exists. 
+    //The res.json() method converts the provided object into a JSON string and sends it as the response.
     admin && res.json({message: "user already exists!"})
 
+    //Here I used the bcrypt library to hash the provided password synchronously. 
+    //It uses a salt factor of 10 for hashing, which determines the computational cost of the hashing process.
     const hashedPassword = bcrypt.hashSync(password, 10)
 
+    //Create a new instance of the AdminModel using the new keyword and assigns it to the newAdmin variable. 
+    //It passes an object with username and password properties, where the password is set to the hashed password generated in the previous line.
     const newAdmin = new AdminModel({username,
         password: hashedPassword
     })
 
+    //Save the new admin object to the database by calling the save() method on the newAdmin instance. 
+    //It returns a promise, so await is used to wait for the save operation to complete.
     await newAdmin.save();
 
+    //Send a JSON response to the client with a message indicating that the admin was created successfully. 
+    //The return statement ensures that the function execution ends at this point, preventing any further code execution in the callback.
     return res.json({message: "Admin created successfully!"})
 
 });
 
+//Set up a route handler for the HTTP POST request to the "/login" endpoint. 
+//It defines an asynchronous callback function with req and res parameters to handle the request and response.
 app.post("/login", async (req, res)=> {
 
+    //Use destructuring assignment to extract the username and password properties from the request body (req.body). 
+    //The request body is an object containing these properties.
     const {username, password} = req.body
 
+    //Use the AdminModel (Mongoose model) to query the database and find a document that matches the provided username. 
+    //It uses the findOne method, which returns a promise. The await keyword is used to wait for the promise to resolve, 
+    //and the result is assigned to the admin variable.
     const admin = await AdminModel.findOne({username})
+
+    //This line checks if the admin variable is falsy (no document was found with the given username). 
+    //If it is falsy, it sends a JSON response to the client with a message stating that the user doesn't exist. 
+    //The res.json() method converts the provided object into a JSON string and sends it as the response.
     !admin && res.json({message: "user doesn't exist!"})
 
+    //Use the bcrypt library to compare the provided password with the hashed password stored in the admin document retrieved from the database. It returns a promise, 
+    //and await is used to wait for the comparison to complete. The result is assigned to the isPasswordValid variable.
     const isPasswordValid = await bcrypt.compare(password, admin.password)
+
+    //Check if the isPasswordValid variable is falsy (the password provided by the user does not match the stored hashed password). 
+    //If it is falsy, it sends a JSON response to the client with a message stating that the username or password is not correct.
     !isPasswordValid && res.json({message: "Username or password is not correct"})
 
     //jwt = json web token
+    //Use the jwt library (JSON Web Token) to create a token. It signs a payload object containing the id property with the value of admin._id, 
+    //which represents the unique identifier of the admin retrieved from the database. 
+    //The token is generated using a secret key stored in the process.env.SECRET environment variable.
     const token = jwt.sign({id: admin._id}, process.env.SECRET)
-    return res.json({token, adminID: admin._id})
 
+    //Send a JSON response to the client with the generated token and the adminID extracted from the admin object. 
+    //The return statement ensures that the function execution ends at this point, preventing any further code execution in the callback.
+    return res.json({token, adminID: admin._id})
 })
 
 
