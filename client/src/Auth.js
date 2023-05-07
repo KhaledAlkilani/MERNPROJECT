@@ -68,19 +68,28 @@ const Login = () => {
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
 
+//Use the useCookies hook from a cookies library (such as react-cookie or universal-cookie). 
+//It declares a state variable setCookies that allows setting cookies in the browser. 
+//The access_token is the name of the cookie.
     const [_, setCookies] = useCookies(["access_token"])
-    // const navigate = useNavigate()
 
     const onSubmit = async (e) => {
+//This function prevents the default form submission behavior
         e.preventDefault()
+
+//a POST request being sent to the login API endpoint with the provided username and password as the request payload. 
+//It uses the Axios library to make the HTTP request. The response from the server is stored in the response variable.
         const response = await Axios.post(`${api}`, {
             username, password
         })
+//Set the "access_token" cookie in the browser with the value obtained from the response data. It uses the setCookies function from the cookies library.
         setCookies("access_token", response.data.token)
+
+//Set an item called "userID" in the browser's localStorage with the value obtained from the response data. It stores the admin's ID for future reference.
         window.localStorage.setItem("userID", response.data.adminID)
+//This line reloads the current page, forcing a full refresh of the page. The argument false indicates that the page should be reloaded from the cache 
+//rather than making a fresh request to the server.
         window.location.reload(false)
-        // navigate("/users")
-        //console.log(response)
     }
 
     return (
